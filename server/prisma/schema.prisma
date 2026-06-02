@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  playlists Playlist[]
+}
+
+model Playlist {
+  id        Int      @id @default(autoincrement())
+  name      String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks    Json     @default("[]")  // ← ЭТО ПОЛЕ ОБЯЗАТЕЛЬНО!
+  createdAt DateTime @default(now())
+}
+
+model Track {
+  id        Int       @id @default(autoincrement())
+  title     String
+  artist    String
+  url       String
+  coverUrl  String?
+  duration  Int?
+  sourceId  String?   @unique
+  createdAt DateTime  @default(now())
+}
