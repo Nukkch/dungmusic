@@ -9,48 +9,44 @@ import PlaylistView from '../../components/Playlists/PlaylistView';
 export default function Home() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const { searchQuery, setSearchQuery, activePlaylist, clearActivePlaylist } = useStore();
 
-  // 🔍 Поиск на фронтенде
-  const filteredTracks = tracks.filter(track => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      track.title.toLowerCase().includes(q) ||
-      track.artist.toLowerCase().includes(q)
-    );
-  });
-
-  // 🕷️ Обработчик поиска
-// 🕷️ Обработчик парсинга
-const handleParse = async (e) => {
-  e.preventDefault();
-  if (!searchQuery.trim()) return;
-  
-  try {
-    setLoading(true);
-    const { data } = await tracksAPI.parse(searchQuery);  // ← parse, не search!
-    setTracks(data);
-  } catch (err) {
-    console.error('Parse error:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleParse = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    try {
+      setLoading(true);
+      const { data } = await tracksAPI.parse(searchQuery);
+      if (Array.isArray(data)) {
+        setTracks(data);
+      } else if (data?.tracks) {
+        console.warn('tracksAPI.parse returned object with tracks field, using data.tracks');
+        setTracks(Array.isArray(data.tracks) ? data.tracks : []);
+      } else {
+        console.warn('tracksAPI.parse returned unexpected response:', data);
+        setTracks([]);
+      }
+      setHasSearched(true);
+    } catch (err) {
+      console.error('Parse error:', err);
+      setTracks([]);
+      setHasSearched(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-80px)] p-6 flex flex-col md:flex-row gap-6 overflow-hidden">
-      
-      {/* ЛЕВАЯ КОЛОНКА */}
       <div className="flex-1 bg-surface border border-border rounded-2xl overflow-hidden p-6">
         <div className="flex flex-col h-full">
-          
           {activePlaylist ? (
             <PlaylistView onBack={clearActivePlaylist} />
           ) : (
             <>
               <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Search for tracks</h3>
-              
               <div className="flex gap-3 mb-6">
                 <input
                   type="text"
@@ -58,48 +54,41 @@ const handleParse = async (e) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleParse(e)}
-                  className="flex-1 bg-bg border border-border rounded-lg px-4 py-2 text-text focus:outline-none focus:border-primary transition-colors"
+                  className="flex-1 bg-bg border border-border rounded-lg px-4 py-2 text-text focus:outline-none focus:border-primary"
                 />
                 <button 
                   onClick={handleParse}
                   disabled={loading}
-                  className="px-6 py-2 bg-primary rounded-lg text-white font-semibold hover:bg-primary/90 whitespace-nowrap transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-primary rounded-lg text-white font-semibold hover:bg-primary/90 disabled:opacity-50"
                 >
                   {loading ? 'Searching...' : 'Search'}
                 </button>
               </div>
-              
-              <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-2">
-                {filteredTracks.length > 0 ? (
-                  filteredTracks.map((track) => (
-                    <TrackCard 
-                      key={track.id} 
-                      track={track} 
-                      trackList={filteredTracks}
-                    />
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {loading ? (
+                  <div className="text-center text-muted py-10">
+                    Searching... Please wait.
+                  </div>
+                ) : tracks.length > 0 ? (
+                  tracks.map((track) => (
+                    <TrackCard key={track.id} track={track} trackList={tracks} />
                   ))
                 ) : (
-                  <div className="text-center text-muted py-10 text-sm">
-                    {searchQuery ? 'Ничего не найдено' : 'Введите запрос и нажмите Search'}
+                  <div className="text-center text-muted py-10">
+                    {hasSearched ? 'Ничего не найдено' : 'Введите запрос'}
                   </div>
                 )}
               </div>
             </>
           )}
-          
         </div>
       </div>
-
-      {/* ЦЕНТРАЛЬНАЯ КОЛОНКА */}
       <div className="flex-[2] bg-surface border border-border rounded-2xl overflow-hidden">
         <PlayerCenter />
       </div>
-
-      {/* ПРАВАЯ КОЛОНКА */}
       <div className="flex-1 bg-surface border border-border rounded-2xl overflow-hidden p-6">
         <PlaylistsColumn />
       </div>
-
     </div>
   );
 }

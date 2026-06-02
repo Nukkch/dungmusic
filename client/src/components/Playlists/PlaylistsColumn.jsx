@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../../store/useStore';
 import { playlistsAPI } from '../../services/api';
 
@@ -7,21 +7,14 @@ export default function PlaylistsColumn() {
 const { 
     playlists = [], 
     setPlaylists, 
-    createPlaylist, 
     deletePlaylist, 
-    addTrackToPlaylist, 
     setActivePlaylist  // ← ОБЯЗАТЕЛЬНО!
   } = useStore();
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Загружаем плейлисты с бэкенда при монтировании
-    useEffect(() => {
-        loadPlaylists();
-    }, []);
-
-  const loadPlaylists = async () => {
+  const loadPlaylists = useCallback(async () => {
     try {
       console.log('📥 Загрузка плейлистов...');
       const { data } = await playlistsAPI.getAll();
@@ -33,7 +26,12 @@ const {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setPlaylists]);
+
+  // Загружаем плейлисты с бэкенда при монтировании
+  useEffect(() => {
+    loadPlaylists();
+  }, [loadPlaylists]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -105,7 +103,11 @@ const {
             >
               <div className="aspect-square bg-bg rounded-xl border border-border transition-colors relative overflow-hidden cursor-pointer">
                 <button 
-                  onClick={() => handleDelete(playlist.id)}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(playlist.id);
+                  }}
                   className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-xs z-10"style={{padding:"8px", paddingLeft:"12px", paddingRight:"12px",  marginRight:"8px", marginTop:"4px"}}
                 >
                    X

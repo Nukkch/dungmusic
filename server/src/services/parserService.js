@@ -10,34 +10,151 @@ const cheerio = require('cheerio');
 
 const BASE_URL = 'https://new.zvukofon.com';
 
+const normalizeUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  const url = rawUrl.trim();
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  if (url.startsWith('//')) {
+    return `https:${url}`;
+  }
+  if (url.startsWith('/')) {
+    return `${BASE_URL}${url}`;
+  }
+  return `${BASE_URL}/${url}`;
+};
+
+const parseCoverFromStyle = (style = '') => {
+  const match = style.match(/background-image:\s*url\((['"]?)(.*?)\1\)/i);
+  if (!match) return null;
+  return normalizeUrl(match[2].trim());
+};
+
 /**
  * Парсит страницу и возвращает массив треков
  */
 exports.parse = async (query) => {
+  console.log('🔍 Parsing query:', query);
   try {
-    // Здесь твой код парсинга
-    // Пример (замени на свой URL парсера):
-    const response = await axios.get(`https://new.zvukofon.com/search`, {
-      params: { text: query }
+    const searchUrl = buildSearchUrl(query);
+
+    const directResult = await parseZvukofon(searchUrl);
+    if (directResult?.success && Array.isArray(directResult.tracks) && directResult.tracks.length > 0) {
+      return directResult.tracks;
+    }
+
+    const response = await axios.get(searchUrl, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8'
+      }
     });
     
     const $ = cheerio.load(response.data);
     const tracks = [];
-    
-    $('.track-item').each((i, el) => {
+    const seenUrls = new Set(); // Чтобы не дублировать треки
+
+    $('a[href*=".mp3"], button[data-url]').each((i, el) => {
+      const $el = $(el);
+      const rawUrl = $el.attr('href') || $el.attr('data-url');
+      const fullUrl = normalizeUrl(rawUrl);
+      if (!fullUrl || seenUrls.has(fullUrl)) return;
+      seenUrls.add(fullUrl);
+
+      const $track = $el.closest('li, .track-item, .music-item, .topcharts__item, .chart__item, .track-detail, .albums__item, div');
+      let title = '';
+      let artist = 'Unknown';
+      let coverUrl = null;
+
+      const musmetaRaw = $track.attr('data-musmeta') || $el.attr('data-musmeta');
+      if (musmetaRaw) {
+        try {
+          const musmetaJson = musmetaRaw
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, '&')
+            .replace(/&apos;/g, "'")
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>');
+          const meta = JSON.parse(musmetaJson);
+          title = meta.title?.trim() || '';
+          artist = meta.artist?.trim() || artist;
+          coverUrl = normalizeUrl(meta.img);
+        } catch (err) {
+          console.warn('Failed to parse data-musmeta:', err.message);
+        }
+      }
+
+      if (!title) {
+        title = $track.find('h1, .track-title').first().text().trim();
+      }
+      if (!artist || artist === 'Unknown') {
+        const artistText = $track.find('.track-artist, .artist-name').first().text().trim();
+        if (artistText) artist = artistText;
+      }
+
+      if (!coverUrl) {
+        const coverElement = $track.find('div.track-detail__img img, div.track-detail__img').first();
+        if (coverElement.length) {
+          coverUrl = normalizeUrl(coverElement.attr('src') || coverElement.attr('data-src') || parseCoverFromStyle(coverElement.attr('style') || ''));
+        }
+      }
+      if (!coverUrl) {
+        const fallbackCover = $track.find('div.topcharts__item-img, div.track-cover-img, div.albums__item-img, img.track-cover, img.album-cover').first();
+        if (fallbackCover.length) {
+          coverUrl = normalizeUrl(fallbackCover.attr('src') || fallbackCover.attr('data-src') || parseCoverFromStyle(fallbackCover.attr('style') || ''));
+        }
+      }
+      if (!coverUrl) {
+        const styleCover = $track.find('[style*="background-image"]').first();
+        if (styleCover.length) {
+          coverUrl = normalizeUrl(parseCoverFromStyle(styleCover.attr('style') || ''));
+        }
+      }
+
+      if (!title) {
+        const urlParts = fullUrl.split('/');
+        const filename = decodeURIComponent(urlParts[urlParts.length - 1] || '');
+        title = filename
+          .replace('.mp3', '')
+          .replace(/\(.*?\)/g, '')
+          .replace(/\[.*?\]/g, '')
+          .replace(/musportal\.org/i, '')
+          .replace(/zvukofon/i, '')
+          .replace(/_/g, ' ')
+          .trim();
+        if (title.includes(' - ')) {
+          const parts = title.split(' - ');
+          artist = parts[0].trim() || artist;
+          title = parts.slice(1).join(' - ').trim();
+        }
+      }
+
+      if (!title || title.length < 3) {
+        title = $el.text().trim() || query || `Track ${i + 1}`;
+      }
+
       tracks.push({
-        id: i,
-        title: $(el).find('.title').text().trim(),
-        artist: $(el).find('.artist').text().trim(),
-        url: $(el).find('audio source').attr('src'),
-        coverUrl: $(el).find('img').attr('src'),
-        duration: 0 // или распарси из HTML
+        id: `track_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}`,
+        title: title.slice(0, 100),
+        artist: artist.slice(0, 100),
+        url: fullUrl,
+        coverUrl,
+        duration: 0
       });
     });
     
+    console.log(`✅ Found ${tracks.length} unique tracks`);
+    if (tracks.length > 0) {
+      console.log('🎵 First track:', JSON.stringify(tracks[0], null, 2));
+    }
+    
     return tracks;
+    
   } catch (err) {
-    console.error('Parser error:', err.message);
+    console.error('❌ Parser error:', err.response?.status || err.message);
     return [];
   }
 };
@@ -169,4 +286,8 @@ function buildSearchUrl(query) {
   return `${BASE_URL}/music/${encoded}`;
 }
 
-module.exports = { parseZvukofon, buildSearchUrl };
+module.exports = { 
+  parse: exports.parse,  // ← явно указываем, что берём из exports
+  parseZvukofon, 
+  buildSearchUrl 
+};

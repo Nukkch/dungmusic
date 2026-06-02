@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 
 export function useAudio() {
   const audioRef = useRef(null);
-  const repeatModeRef = useRef('off'); // ← Ref для отслеживания без перезапуска
+  const repeatModeRef = useRef('off');
   
   const { 
     currentTrack, 
@@ -16,20 +16,16 @@ export function useAudio() {
     togglePlay 
   } = useStore();
 
-  // 🔁 Синхронизируем ref с актуальным repeatMode
   useEffect(() => {
     repeatModeRef.current = repeatMode;
-    console.log('🔄 Repeat mode changed to:', repeatMode);
   }, [repeatMode]);
 
-  // 🎚️ Громкость
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
   }, [volume]);
 
-  // ⏯️ Play/Pause
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack?.url) return;
@@ -45,7 +41,7 @@ export function useAudio() {
     }
   }, [isPlaying, currentTrack?.url]);
 
-  // 🎵 Загрузка трека и слушатели
+  // Эффект для загрузки трека (когда меняется трек)
   useEffect(() => {
     if (!currentTrack?.url) return;
     
@@ -57,7 +53,6 @@ export function useAudio() {
     
     console.log('🎵 Loading track:', currentTrack.title);
     
-    // Слушатели
     const handleTimeUpdate = () => {
       setProgress(audio.currentTime);
     };
@@ -65,13 +60,10 @@ export function useAudio() {
     const handleMetaLoaded = () => {
       console.log('📏 Duration:', audio.duration);
       setDuration(audio.duration);
-      if (isPlaying) {
-        audio.play().catch(e => console.error(e));
-      }
     };
     
     const handleEnded = () => {
-      const currentMode = repeatModeRef.current; // ← Берём из ref (не вызывает перезапуск)
+      const currentMode = repeatModeRef.current;
       console.log('🔁 Track ended. Mode:', currentMode);
       
       if (currentMode === 'track') {
@@ -88,31 +80,36 @@ export function useAudio() {
       }
     };
 
-    // Подключаем
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleMetaLoaded);
     audio.addEventListener('ended', handleEnded);
     
-    // Загружаем
     audio.src = currentTrack.url;
     audio.load();
 
-    // Cleanup
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleMetaLoaded);
       audio.removeEventListener('ended', handleEnded);
     };
     
-  }, [
-    currentTrack?.url,
-    // repeatMode УБРАН из зависимостей!
-    isPlaying,
-    nextTrack,
-    togglePlay,
-    setProgress,
-    setDuration
-  ]); 
+  }, [currentTrack?.url, nextTrack, togglePlay, setProgress, setDuration]);
+
+  // Отдельный эффект для play/pause (без перезагрузки трека!)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack?.url) return;
+    
+    if (isPlaying) {
+      audio.play().catch(e => {
+        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+          console.error('Play error:', e);
+        }
+      });
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, currentTrack?.url]); 
 
   return {
     audioRef,

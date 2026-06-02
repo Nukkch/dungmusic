@@ -3,13 +3,7 @@ import { useStore } from '../../store/useStore';
 import { playlistsAPI } from '../../services/api';
 
 export default function TrackCard({ track, trackList = [] }) {
-  const { 
-    playTrack, 
-    currentTrack, 
-    playlists, 
-    addTrackToPlaylist,
-    addToast  // ← ДОБАВЬ ЭТО!
-  } = useStore();
+  const { playTrack, currentTrack, playlists, addTrackToPlaylist } = useStore();
   const [showMenu, setShowMenu] = useState(false);
 
   const handlePlay = () => {
@@ -29,17 +23,9 @@ export default function TrackCard({ track, trackList = [] }) {
       await playlistsAPI.addTrack(playlistId, track);
       addTrackToPlaylist(playlistId, track);
       setShowMenu(false);
-      
-      // 🟢 Было: alert('Треки добавлен!')
-      // 🟢 Стало:
-      addToast('Трек добавлен в плейлист!', 'success');
-      addToast('Трек добавлен в плейлист!', 'success');
-      
     } catch (err) {
       console.error('❌ Add to playlist failed:', err);
-      // 🟢 Было: alert('Не удалось добавить трек')
-      // 🟢 Стало:
-      addToast(err.response?.data?.error || 'Не удалось добавить трек', 'error');
+      alert(err.response?.data?.error || 'Не удалось добавить трек');
     }
   };
 
@@ -52,7 +38,6 @@ export default function TrackCard({ track, trackList = [] }) {
                    ${isCurrent ? 'bg-primary/20 border border-primary/50' : 'hover:bg-white/5'}`}
         onClick={handlePlay}
       >
-        {/* Обложка трека */}
         <div className="relative w-12 h-12 flex-shrink-0 m-1 mr-2">
           <img 
             src={track.coverUrl || 'https://via.placeholder.com/48x48/1e293b/64748b?text=♪'} 
@@ -67,7 +52,6 @@ export default function TrackCard({ track, trackList = [] }) {
           </div>
         </div>
 
-        {/* Инфо о треке */}
         <div className="flex-1 min-w-0">
           <p className={`font-medium truncate ${isCurrent ? 'text-primary' : ''}`}>
             {track.title}
@@ -75,12 +59,10 @@ export default function TrackCard({ track, trackList = [] }) {
           <p className="text-sm text-gray-400 truncate">{track.artist}</p>
         </div>
 
-        {/* Длительность */}
         <span className="text-sm text-gray-400 w-12 text-right">
           {track.duration ? `${Math.floor(track.duration/60)}:${(track.duration%60).toString().padStart(2,'0')}` : '--:--'}
         </span>
 
-        {/* Кнопка меню (три точки) */}
         <button 
           onClick={(e) => {
             e.stopPropagation();
@@ -96,20 +78,19 @@ export default function TrackCard({ track, trackList = [] }) {
         </button>
       </div>
 
-      {/* Меню добавления в плейлист */}
       {showMenu && (
         <>
-          {/* Затемнение фона */}
           <div 
             className="fixed inset-0 z-[9998]" 
             onClick={() => setShowMenu(false)}
           ></div>
 
-          {/* Само меню */}
           <div 
-            className="absolute right-0 top-12 z-[9999] border border-border rounded-lg shadow-2xl min-w-[220px] overflow-hidden bg-surface"
+            className="absolute right-0 top-12 z-[9999] border border-border rounded-lg shadow-2xl min-w-[220px] overflow-hidden"
+            style={{ backgroundColor: '#0b1120' }}
           >
-            <div className="px-4 py-2.5 text-xs font-semibold text-muted border-b border-border bg-black/10">
+            <div className="px-4 py-2.5 text-xs font-semibold text-muted border-b border-border"
+                 style={{ backgroundColor: '#0b1120' }}>
               Add to playlist
             </div>
             
@@ -119,7 +100,7 @@ export default function TrackCard({ track, trackList = [] }) {
                   <button
                     key={playlist.id}
                     onClick={() => handleAddToPlaylist(playlist.id)}
-                    className="w-full text-left px-4 py-2.5 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-between group"
+                    className="w-full text-left px-4 py-2.5 text-sm text-text bg-surface hover:bg-surface/90 hover:text-primary transition-colors flex items-center justify-between group"
                   >
                     <span className="truncate pr-2">{playlist.name}</span>
                     <span className="text-[10px] text-muted bg-surface px-1.5 py-0.5 rounded-full group-hover:bg-primary/20">

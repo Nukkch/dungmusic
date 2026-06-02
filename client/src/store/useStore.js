@@ -148,7 +148,8 @@ export const useStore = create(
 
       deletePlaylist: (id) => {
         set((state) => ({ 
-          playlists: state.playlists.filter(p => p.id !== id) 
+          playlists: state.playlists.filter(p => p.id !== id),
+          activePlaylist: state.activePlaylist?.id === id ? null : state.activePlaylist
         }));
       },
 
@@ -176,17 +177,33 @@ export const useStore = create(
         });
       },
       removeTrackFromPlaylist: (playlistId, trackId) => {
-        set((state) => ({
-          playlists: state.playlists.map(p => {
+        set((state) => {
+          const updatedPlaylists = state.playlists.map(p => {
             if (p.id === playlistId) {
-              return { 
-                ...p, 
-                tracks: p.tracks.filter(t => t.id !== trackId && t.sourceId !== trackId) 
+              return {
+                ...p,
+                tracks: (p.tracks || []).filter(
+                  (t) => String(t.id) !== String(trackId) && String(t.sourceId) !== String(trackId)
+                ),
               };
             }
             return p;
-          })
-        }));
+          });
+
+          const updatedActivePlaylist = state.activePlaylist?.id === playlistId
+            ? {
+                ...state.activePlaylist,
+                tracks: (state.activePlaylist.tracks || []).filter(
+                  (t) => String(t.id) !== String(trackId) && String(t.sourceId) !== String(trackId)
+                ),
+              }
+            : state.activePlaylist;
+
+          return {
+            playlists: updatedPlaylists,
+            activePlaylist: updatedActivePlaylist,
+          };
+        });
       }
     }),
     

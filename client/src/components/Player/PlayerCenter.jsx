@@ -2,10 +2,8 @@ import { useStore } from '../../store/useStore';
 import { useAudio } from '../../hooks/useAudio';
 
 export default function PlayerCenter() {
-  // 🔊 Получаем audioRef и методы управления из хука
   const { audioRef, seek } = useAudio();
   
-  // 📦 Получаем данные и действия из стора
   const { 
     currentTrack, 
     isPlaying, 
@@ -27,7 +25,6 @@ export default function PlayerCenter() {
     return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Обработчик перемотки (просто передаёт значение в хук)
   const handleSeek = (e) => {
     const time = parseFloat(e.target.value);
     seek(time);
@@ -46,11 +43,8 @@ export default function PlayerCenter() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full p-4">
-      
-      {/* 🔊 Скрытый аудио-элемент (привязываем ref из хука) */}
       <audio ref={audioRef} className="hidden" preload="metadata" />
 
-      {/* 🖼️ Большая обложка */}
       <div className="w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-2xl mb-8 bg-bg border border-border relative">
         <img 
           src={currentTrack.coverUrl || 'https://via.placeholder.com/400x400/1e293b/64748b?text=♪'} 
@@ -59,13 +53,11 @@ export default function PlayerCenter() {
         />
       </div>
 
-      {/* ℹ️ Информация */}
       <div className="text-center mb-6 w-full">
         <h2 className="text-2xl font-bold text-text truncate">{currentTrack.title}</h2>
         <p className="text-muted text-lg mt-1 truncate">{currentTrack.artist}</p>
       </div>
 
-      {/* ⏱️ Прогресс бар */}
       <div className="w-full max-w-md mb-8 px-4">
         <div className="flex justify-between text-xs text-gray-400 mb-2">
           <span>{formatTime(progress)}</span>
@@ -88,10 +80,7 @@ export default function PlayerCenter() {
         />
       </div>
 
-      {/* ▶️ Кнопки управления */}
       <div className="flex flex-col items-center gap-4 mb-6">
-        
-        {/* 1. Основные кнопки */}
         <div className="flex items-center gap-8">
            <button onClick={prevTrack} className="p-3 text-muted hover:text-white transition-colors">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
@@ -118,7 +107,6 @@ export default function PlayerCenter() {
            </button>
         </div>
 
-        {/* 2. Повтор и Громкость */}
         <div className="flex items-center gap-4">
            <button 
              onClick={toggleRepeat}

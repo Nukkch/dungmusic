@@ -17,9 +17,15 @@ exports.getPlaylists = async (req, res) => {
 exports.createPlaylist = async (req, res) => {
   try {
     const userId = req.userId;  // ← Это должно быть!
-    const { name } = req.body;
+    let name = req.body?.name ?? req.body;
 
-    if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
+    if (typeof name !== 'string') {
+      name = name?.name ?? name?.value ?? null;
+    }
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Name required' });
+    }
 
     const playlist = await prisma.playlist.create({
       data: { name: name.trim(), userId, tracks: [] }
@@ -34,9 +40,14 @@ exports.createPlaylist = async (req, res) => {
 // 🗑️ Удалить плейлист
 exports.deletePlaylist = async (req, res) => {
   try {
-    await prisma.playlist.delete({
-      where: { id: parseInt(req.params.id), userId: req.userId }
-    });
+    const playlistId = parseInt(req.params.id);
+    const playlist = await prisma.playlist.findUnique({ where: { id: playlistId } });
+
+    if (!playlist || playlist.userId !== req.userId) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    await prisma.playlist.delete({ where: { id: playlistId } });
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ error: 'DB Error', message: err.message });
@@ -129,7 +140,7 @@ exports.removeTrack = async (req, res) => {
     // Фильтруем треки, удаляя нужный (по id или sourceId)
     const currentTracks = playlist.tracks || [];
     const updatedTracks = currentTracks.filter(t => 
-      t.id !== trackId && t.sourceId !== trackId
+      String(t.id) !== String(trackId) && String(t.sourceId) !== String(trackId)
     );
 
     const updated = await prisma.playlist.update({
