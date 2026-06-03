@@ -26,26 +26,26 @@ export default function PlaylistView({ onBack }) {
   return (
     <div className="flex flex-col h-full">
       {/* Заголовок плейлиста */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4" style={{padding:"14px"}}>
         <button 
           onClick={onBack}
-          className="text-xs text-muted hover:text-white flex items-center gap-1 transition-colors"
+          className="text-m text-muted hover:text-white flex items-center gap-1 transition-colors"
         >
-          ← Назад к поиску
+          ← Back to search
         </button>
         <h2 className="text-m font-semibold text-primary truncate max-w-[140px]">
           {activePlaylist.name}
         </h2>
-        <span className="text-sm text-muted">{activePlaylist.tracks.length} треков</span>
+        <span className="text-m text-muted">{activePlaylist.tracks.length} tracks</span>
       </div>
 
       {/* Список треков */}
-      <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar" style={{padding:"14px", paddingTop:"1px"}}>
         {activePlaylist.tracks.length > 0 ? (
           activePlaylist.tracks.map((track) => (
             <div 
               key={track.id} 
-              className="group flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"style={{margin: '4px',marginRight:"8px"}}
+              className="group flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"style={{margin: '6px',marginRight:"8px"}}
             >
               {/* Обложка + Play */}
               <div 
@@ -69,8 +69,8 @@ export default function PlaylistView({ onBack }) {
                 className="flex-1 min-w-0 cursor-pointer" 
                 onClick={() => handlePlay(track)}
               >
-                <p className="font-medium text-sm truncate text-text">{track.title}</p>
-                <p className="text-xs text-muted truncate">{track.artist}</p>
+                <p className="font-medium text-m truncate text-text">{track.title}</p>
+                <p className="text-sm text-muted text-gray-400 truncate">{track.artist}</p>
               </div>
 
               {/* Кнопка удаления */}
@@ -86,7 +86,7 @@ export default function PlaylistView({ onBack }) {
             </div>
           ))
         ) : (
-          <div className="text-center text-muted text-sm py-10">Плейлист пуст</div>
+          <div className="text-center text-muted text-sm py-10">Playlist is empty</div>
         )}
       </div>
     </div>

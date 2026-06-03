@@ -66,7 +66,7 @@ const {
 
   return (
     <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4" style={{padding:"14px"}}>
             <h3 className="text-sm font-semibold text-muted uppercase tracking-wider">Playlists</h3>
                 <button 
                 onClick={() => setIsCreating(!isCreating)}
@@ -84,13 +84,13 @@ const {
             placeholder="Playlist name..."
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="flex-1 bg-bg border border-border rounded px-2 py-1 text-sm text-text focus:border-primary outline-none"
+            className="flex-1 bg-bg border border-border rounded px-2 py-1 text-sm text-text focus:border-primary outline-none" style={{marginLeft:"12px", marginRight:"14px", padding:"6px"}}
           />
-          <button type="submit" className="text-primary hover:text-white">✓</button>
+          <button type="submit" className="text-primary hover:text-white" style={{marginRight:"22px"}}>✓</button>
         </form>
       )}
 
-            <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-4 content-start pr-1"style={{marginTop:"12px"}}>
+            <div className="flex-1 overflow-y-auto grid grid-cols-2 gap-4 content-start pr-1"style={{marginTop:"12px", padding:"14px"}}>
         {playlists && playlists.length > 0 ? (
           playlists.map((playlist) => (
             <div 

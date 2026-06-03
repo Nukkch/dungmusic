@@ -40,13 +40,13 @@ export default function Home() {
 
   return (
     <div className="h-[calc(100vh-80px)] p-6 flex flex-col md:flex-row gap-6 overflow-hidden">
-      <div className="flex-1 bg-surface border border-border rounded-2xl overflow-hidden p-6">
+      <div className="flex-1 bg-surface border border-border rounded-2xl overflow-hidden p-6" style={{padding:"14px"}}>
         <div className="flex flex-col h-full">
           {activePlaylist ? (
             <PlaylistView onBack={clearActivePlaylist} />
           ) : (
             <>
-              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Search for tracks</h3>
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4" style={{marginBottom:"8px"}}>Search for tracks</h3>
               <div className="flex gap-3 mb-6">
                 <input
                   type="text"
@@ -54,7 +54,7 @@ export default function Home() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleParse(e)}
-                  className="flex-1 bg-bg border border-border rounded-lg px-4 py-2 text-text focus:outline-none focus:border-primary"
+                  className="flex-1 bg-bg border border-border rounded-lg px-4 py-2 text-text focus:outline-none focus:border-primary" style={{padding:"6px", marginBottom:"12px"}}
                 />
                 <button 
                   onClick={handleParse}

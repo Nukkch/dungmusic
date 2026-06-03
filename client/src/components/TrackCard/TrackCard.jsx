@@ -35,7 +35,7 @@ export default function TrackCard({ track, trackList = [] }) {
     <div className="relative">
       <div 
         className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all
-                   ${isCurrent ? 'bg-primary/20 border border-primary/50' : 'hover:bg-white/5'}`}
+                   ${isCurrent ? 'bg-primary/20 border border-primary/50' : 'hover:bg-white/5'}`} style={{marginBottom:"6px"}}
         onClick={handlePlay}
       >
         <div className="relative w-12 h-12 flex-shrink-0 m-1 mr-2">
