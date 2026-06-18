@@ -39,9 +39,13 @@ exports.parse = async (query) => {
   try {
     const searchUrl = buildSearchUrl(query);
 
-    const directResult = await parseZvukofon(searchUrl);
-    if (directResult?.success && Array.isArray(directResult.tracks) && directResult.tracks.length > 0) {
-      return directResult.tracks;
+    try {
+      const directResult = await parseZvukofon(searchUrl);
+      if (directResult?.success && Array.isArray(directResult.tracks) && directResult.tracks.length > 0) {
+        return directResult.tracks;
+      }
+    } catch (directErr) {
+      console.warn('⚠️ Direct parser failed, falling back:', directErr.message);
     }
 
     const response = await axios.get(searchUrl, {
