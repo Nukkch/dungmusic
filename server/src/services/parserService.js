@@ -6,9 +6,14 @@
  */
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 // const prisma = require('../config/db'); // Prisma не используется в этом режиме
 
 const BASE_URL = 'https://new.zvukofon.com';
+
+// zvukofon.com блокирует запросы с датацентровых IP (Railway и т.п.),
+// поэтому исходящие запросы прогоняются через внешний proxy, если он задан.
+const proxyAgent = process.env.PROXY_URL ? new HttpsProxyAgent(process.env.PROXY_URL) : null;
 
 const normalizeUrl = (rawUrl) => {
   if (!rawUrl) return null;
@@ -50,6 +55,7 @@ exports.parse = async (query) => {
 
     const response = await axios.get(searchUrl, {
       timeout: 10000,
+      httpsAgent: proxyAgent,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -168,6 +174,7 @@ async function parseZvukofon(url) {
     
     const { data } = await axios.get(url, {
       timeout: 20000,
+      httpsAgent: proxyAgent,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) DungemusicResearchBot/1.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
